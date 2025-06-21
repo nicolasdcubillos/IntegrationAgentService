@@ -1,7 +1,16 @@
-using IntegrationAgentService;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System.Runtime.InteropServices;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+IHostBuilder builder = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((hostContext, services) =>
+    {
+        services.AddHostedService<Worker>();
+    });
 
-var host = builder.Build();
-host.Run();
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    builder.UseWindowsService(); // Only active on Windows
+}
+
+builder.Build().Run();

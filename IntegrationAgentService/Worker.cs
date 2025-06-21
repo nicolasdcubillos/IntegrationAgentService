@@ -1,23 +1,49 @@
-namespace IntegrationAgentService;
+using IntegrationAgentService.Components;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
+    private readonly IConfiguration _config;
+    private Timer? _timer;
+    private readonly int _heartbeat;
+    private readonly PurchaseInterface? _purchaseInterface;
 
-    public Worker(ILogger<Worker> logger)
+    public Worker(ILogger<Worker> logger, IConfiguration config)
     {
         _logger = logger;
+        _config = config;
+
+        _heartbeat = int.TryParse(_config["ServiceConfig:HeartbeatSeconds"], out var value)
+            ? value
+            : 30;
+
+        if (bool.TryParse(_config["ServiceConfig:Interfaces:Purchase:Enabled"], out var enabled) && enabled)
+        {
+            _purchaseInterface = new PurchaseInterface(_logger, _config);
+        }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            }
-            await Task.Delay(1000, stoppingToken);
-        }
+        _timer = new Timer(RunInterfaces, null, TimeSpan.Zero, TimeSpan.FromSeconds(_heartbeat));
+        return Task.CompletedTask;
+    }
+
+    private void RunInterfaces(object? state)
+    {
+        _logger.LogInformation("IntegrationAgentService heartbeat at {time}", DateTimeOffset.Now);
+        _purchaseInterface?.Execute();
+    }
+
+    public override void Dispose()
+    {
+        _timer?.Dispose();
+        base.Dispose();
     }
 }
