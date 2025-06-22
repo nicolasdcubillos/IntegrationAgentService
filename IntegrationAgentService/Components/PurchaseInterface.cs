@@ -1,52 +1,60 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using System.Threading;
+// agregar referencias
+using IntegrationAgentService.Components.Processors;
 
-namespace IntegrationAgentService.Components
+public class PurchaseInterface
 {
-    public class PurchaseInterface
+    private readonly ILogger _logger;
+    private readonly string _inputFolder;
+    private readonly string _processedFolder;
+    private readonly Dictionary<string, IFileProcessor> _processors;
+
+    public PurchaseInterface(ILogger logger, IConfiguration config)
     {
-        private readonly ILogger _logger;
-        private readonly string _inputFolder;
-        private readonly string _processedFolder;
+        _logger = logger;
 
-        public PurchaseInterface(ILogger logger, IConfiguration config)
+        _inputFolder = config["ServiceConfig:Interfaces:Purchase:WatchFolder"]
+            ?? throw new ArgumentNullException("WatchFolder not found");
+
+        _processedFolder = config["ServiceConfig:Interfaces:Purchase:ProcessedFolder"]
+            ?? throw new ArgumentNullException("ProcessedFolder not found");
+
+        Directory.CreateDirectory(_inputFolder);
+        Directory.CreateDirectory(_processedFolder);
+
+        // registrar procesadores disponibles
+        _processors = new Dictionary<string, IFileProcessor>(StringComparer.OrdinalIgnoreCase)
         {
-            _logger = logger;
+            { ".xml", new XmlPurchaseProcessor(_logger) },
+            { ".json", new JsonPurchaseProcessor(_logger) }
+        };
+    }
 
-            _inputFolder = config["ServiceConfig:Interfaces:Purchase:WatchFolder"]
-                ?? throw new ArgumentNullException("WatchFolder not found in configuration");
+    public void Execute()
+    {
+        var files = Directory.GetFiles(_inputFolder, "*.*")
+                             .Where(f => _processors.ContainsKey(Path.GetExtension(f)));
 
-            _processedFolder = config["ServiceConfig:Interfaces:Purchase:ProcessedFolder"]
-                ?? throw new ArgumentNullException("ProcessedFolder not found in configuration");
-
-            Directory.CreateDirectory(_inputFolder);
-            Directory.CreateDirectory(_processedFolder);
-        }
-
-        public void Execute()
+        foreach (var file in files)
         {
-            var files = Directory.GetFiles(_inputFolder, "*.txt");
-
-            foreach (var file in files)
+            try
             {
-                try
-                {
-                    _logger.LogInformation($"[PurchaseInterface] Processing {file}");
+                _logger.LogInformation($"[PurchaseInterface] Processing {file}");
 
-                    // 🔁 Simulate FoxPro PRG call
-                    Thread.Sleep(500);
+                var ext = Path.GetExtension(file).ToLowerInvariant();
+                var content = File.ReadAllText(file);
 
-                    var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
-                    File.Move(file, dest, true);
+                _processors[ext].Process(content, file);
 
-                    _logger.LogInformation($"[PurchaseInterface] Moved to {dest}");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"[PurchaseInterface] Failed to process {file}");
-                }
+                Thread.Sleep(500);
+
+                var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
+                File.Move(file, dest, true);
+
+                _logger.LogInformation($"[PurchaseInterface] Moved to {dest}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"[PurchaseInterface] Failed to process {file}");
             }
         }
     }
