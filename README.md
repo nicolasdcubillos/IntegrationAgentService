@@ -1,5 +1,8 @@
 # IntegrationAgentService
-IntegrationAgentService WindowsService (.NET).
+
+Windows Service responsible for monitoring and processing XML files located in a shared network path. These files follow the DIAN schema for electronic invoices related to purchases. The service extracts relevant data and indexes it into the existing schema of the ERP.
+
+Servicio de Windows encargado de monitorear y procesar archivos XML ubicados en una ruta compartida de red. Estos archivos cumplen con el esquema DIAN para facturas electrónicas relacionadas con compras. El servicio extrae la información relevante y la indexa en el esquema existente de la base de datos del ERP.
 
 ## Publish the service
 
