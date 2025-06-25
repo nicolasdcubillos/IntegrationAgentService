@@ -5,12 +5,14 @@ IntegrationAgentService WindowsService (.NET).
 
 dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
 
-## Install the service (only Windows OS supported)
+## Install the service
 
-sc create IntegrationAgentService binPath= "C:\Path\To\publish\IntegrationAgentService.exe"
+sc.exe create IntegrationAgentService binPath= "C:\Path\To\publish\IntegrationAgentService.exe"
 
-sc start IntegrationAgentService
+sc.exe start IntegrationAgentService
 
-sc stop IntegrationAgentService
+sc.exe stop IntegrationAgentService
 
-sc delete IntegrationAgentService
+sc.exe delete IntegrationAgentService
+
+Note: For MacOS, run: dotnet start - it will run the Windows Service as a console app.
