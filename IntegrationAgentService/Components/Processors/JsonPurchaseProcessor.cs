@@ -6,10 +6,12 @@ namespace IntegrationAgentService.Components.Processors
     public class JsonPurchaseProcessor : IFileProcessor
     {
         private readonly ILogger _logger;
+        private readonly IConfiguration _config;
 
-        public JsonPurchaseProcessor(ILogger logger)
+        public JsonPurchaseProcessor(ILogger logger, IConfiguration config)
         {
             _logger = logger;
+            _config = config;
         }
 
         public void Process(string content, string filePath)

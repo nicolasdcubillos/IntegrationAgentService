@@ -698,49 +698,49 @@
         },
         "native": {
           "Microsoft.DiaSymReader.Native.amd64.dll": {
-            "fileVersion": "14.42.34436.0"
+            "fileVersion": "0.0.0.0"
           },
           "System.IO.Compression.Native.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "clretwrc.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "clrgc.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "clrgcexp.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "clrjit.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "coreclr.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "createdump.exe": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "hostfxr.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "hostpolicy.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "mscordaccore.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "mscordaccore_amd64_amd64_9.0.625.26613.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "mscordbi.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "mscorrc.dll": {
-            "fileVersion": "9.0.625.26613"
+            "fileVersion": "0.0.0.0"
           },
           "msquic.dll": {
-            "fileVersion": "2.4.8.0"
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -1120,7 +1120,7 @@
         "runtime": {
           "runtimes/win/lib/net9.0/System.Diagnostics.EventLog.Messages.dll": {
             "assemblyVersion": "9.0.0.0",
-            "fileVersion": "0.0.0.0"
+            "fileVersion": "9.0.625.26613"
           },
           "runtimes/win/lib/net9.0/System.Diagnostics.EventLog.dll": {
             "assemblyVersion": "9.0.0.0",

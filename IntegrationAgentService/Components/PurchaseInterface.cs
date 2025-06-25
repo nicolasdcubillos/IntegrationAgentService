@@ -4,6 +4,7 @@ using IntegrationAgentService.Components.Processors;
 public class PurchaseInterface
 {
     private readonly ILogger _logger;
+    private readonly IConfiguration _config;
     private readonly string _inputFolder;
     private readonly string _processedFolder;
     private readonly Dictionary<string, IFileProcessor> _processors;
@@ -11,11 +12,12 @@ public class PurchaseInterface
     public PurchaseInterface(ILogger logger, IConfiguration config)
     {
         _logger = logger;
+        _config = config;
 
-        _inputFolder = config["ServiceConfig:Interfaces:Purchase:WatchFolder"]
+        _inputFolder = _config["ServiceConfig:Interfaces:Purchase:WatchFolder"]
             ?? throw new ArgumentNullException("WatchFolder not found");
 
-        _processedFolder = config["ServiceConfig:Interfaces:Purchase:ProcessedFolder"]
+        _processedFolder = _config["ServiceConfig:Interfaces:Purchase:ProcessedFolder"]
             ?? throw new ArgumentNullException("ProcessedFolder not found");
 
         Directory.CreateDirectory(_inputFolder);
@@ -24,8 +26,8 @@ public class PurchaseInterface
         // registrar procesadores disponibles
         _processors = new Dictionary<string, IFileProcessor>(StringComparer.OrdinalIgnoreCase)
         {
-            { ".xml", new XmlPurchaseProcessor(_logger) },
-            { ".json", new JsonPurchaseProcessor(_logger) }
+            { ".xml", new XmlPurchaseProcessor(_logger, _config) },
+            { ".json", new JsonPurchaseProcessor(_logger, _config) }
         };
     }
 
@@ -48,7 +50,7 @@ public class PurchaseInterface
                 Thread.Sleep(500);
 
                 var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
-                File.Move(file, dest, true);
+                //File.Move(file, dest, true);
 
                 _logger.LogInformation($"[PurchaseInterface] Moved to {dest}");
             }
