@@ -4,6 +4,8 @@ Windows Service responsible for monitoring and processing XML files located in a
 
 Servicio de Windows encargado de monitorear y procesar archivos XML ubicados en una ruta compartida de red. Estos archivos cumplen con el esquema DIAN para facturas electrónicas relacionadas con compras. El servicio extrae la información relevante y la indexa en el esquema existente de la base de datos del ERP.
 
+![Texto alternativo](architecture.png)
+
 ## Publish the service
 
 dotnet publish -c Release -r win-x64 --self-contained true -o ./publish
