@@ -1,7 +1,15 @@
 {
   "Trade": {
+    "SenderParty.PartyTaxScheme.RegistrationName": "Testing",
     "ID": "NumeroFactura",
     "IssueDate": "NombreCliente",
     "Invoice.Total.Amount": "Total"
+  },
+  "MvTrade": {
+    "NotImplemented": "NotImplemented"
+  },
+  "Mtprocli": {
+    "SenderParty.PartyTaxScheme.RegistrationName": "Nombre",
+    "SenderParty.PartyTaxScheme.CompanyID.Text": "NIT"
   }
 }

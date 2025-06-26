@@ -72,9 +72,21 @@ public class PurchaseInterface
 
                 // 4. Translating the xml object file to database schema
 
-                Dictionary<string, object> tradeData = _entityTranslator.TranslateTrade(attachedDocument);
+                Dictionary<string, object> tradeData = _entityTranslator.Translate(attachedDocument, "Trade");
+                Dictionary<string, object> mvTradeData = _entityTranslator.Translate(attachedDocument, "MvTrade");
 
-                // 5. Persisting information in the database
+                // 5. Persisting information in the database and bussiness logic
+                
+                var mtprocliQuery = await _sqlRepository.SelectAsync("Mtprocli", $"NIT = '{attachedDocument.SenderParty.PartyTaxScheme.CompanyID.Text}'");
+                if (mtprocliQuery.Count == 0)
+                {
+                    Dictionary<string, object> mtprocliData = _entityTranslator.Translate(attachedDocument, "Mtprocli");
+                    mtprocliData.Add("Pais", "169");
+                    mtprocliData.Add("Fechaing", DateTime.Now);
+                    mtprocliData.Add("Medpag", 0);
+                    await _sqlRepository.InsertAsync("Mtprocli", mtprocliData);
+                }
+
                 await _sqlRepository.InsertAsync("Trade", tradeData);
             }
             catch (Exception ex)

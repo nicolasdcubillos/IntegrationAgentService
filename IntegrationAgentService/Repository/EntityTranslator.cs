@@ -11,21 +11,22 @@ namespace IntegrationAgentService.Repository
 {
     public class EntityTranslator : IEntityTranslator
     {
-        private readonly Dictionary<string, string> _map;
+        private readonly Dictionary<string, Dictionary<string, string>> _fullMap;
 
         public EntityTranslator(string mappingFilePath)
         {
             var json = File.ReadAllText(mappingFilePath);
 
-            var fullMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json)
+            _fullMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json)
                 ?? throw new InvalidOperationException("Error leyendo el archivo de mapeo.");
-
-            _map = fullMap.TryGetValue("Trade", out var tradeMap)
-                ? tradeMap
-                : throw new InvalidOperationException("No se encontró el apartado 'Trade' en el archivo de mapeo.");
+            
         }
-        public Dictionary<string, object> TranslateTrade(AttachedDocument attachedDocument)
+        public Dictionary<string, object> Translate(AttachedDocument attachedDocument, string table)
         {
+            Dictionary<string, string> _map = _fullMap.TryGetValue(table, out var tableMap)
+                ? tableMap
+                : throw new InvalidOperationException($"No se encontró el apartado {table} en el archivo de mapeo.");
+
             var output = new Dictionary<string, object>();
 
             foreach (var kvp in _map)

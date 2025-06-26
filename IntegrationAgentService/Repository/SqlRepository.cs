@@ -36,5 +36,36 @@ namespace IntegrationAgentService.Repository
 
             await command.ExecuteNonQueryAsync();
         }
+
+        public async Task<List<Dictionary<string, object>>> SelectAsync(string tableName, string? whereClause = null)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var query = $"SELECT * FROM {tableName}";
+            if (!string.IsNullOrWhiteSpace(whereClause))
+                query += $" WHERE {whereClause}";
+
+            using var command = new SqlCommand(query, connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+
+            var results = new List<Dictionary<string, object>>();
+
+            while (await reader.ReadAsync())
+            {
+                var row = new Dictionary<string, object>();
+
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    row[reader.GetName(i)] = reader.IsDBNull(i) ? null! : reader.GetValue(i);
+                }
+
+                results.Add(row);
+            }
+
+            return results;
+        }
+
     }
 }

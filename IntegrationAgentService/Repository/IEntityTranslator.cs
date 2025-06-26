@@ -9,6 +9,6 @@ namespace IntegrationAgentService.Repository
 {
     public interface IEntityTranslator
     {
-        Dictionary<string, object> TranslateTrade(AttachedDocument attachedDocument);
+        Dictionary<string, object> Translate(AttachedDocument attachedDocument, string table);
     }
 }
