@@ -1,11 +1,3 @@
-using IntegrationAgentService.Components;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
@@ -13,6 +5,7 @@ public class Worker : BackgroundService
     private Timer? _timer;
     private readonly int _heartbeat;
     private readonly PurchaseInterface? _purchaseInterface;
+    private readonly string _connectionString;
 
     public Worker(ILogger<Worker> logger, IConfiguration config)
     {
@@ -23,9 +16,11 @@ public class Worker : BackgroundService
             ? value
             : 30;
 
+        _connectionString = _config.GetConnectionString("SQLDatabase");
+
         if (bool.TryParse(_config["ServiceConfig:Interfaces:Purchase:Enabled"], out var enabled) && enabled)
         {
-            _purchaseInterface = new PurchaseInterface(_logger, _config);
+            _purchaseInterface = new PurchaseInterface(_logger, _config, _connectionString);
         }
     }
 

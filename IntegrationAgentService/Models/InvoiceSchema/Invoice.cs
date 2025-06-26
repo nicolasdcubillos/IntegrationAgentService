@@ -839,10 +839,6 @@ namespace IntegrationAgentService.Models.InvoiceSchema
         public Price Price { get; set; }
     }
 
-    [ComVisible(true)]
-    [ProgId("Invoice.Class")]
-    [Guid("4f1f23a8-6acc-4fde-897d-6bc9b16588e3")]
-    [ClassInterface(ClassInterfaceType.AutoDual)]
     [XmlRoot(ElementName = "Invoice", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2")]
     public class Invoice
     {

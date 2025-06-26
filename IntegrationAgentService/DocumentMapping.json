@@ -1,0 +1,7 @@
+{
+  "Trade": {
+    "ID": "NumeroFactura",
+    "IssueDate": "NombreCliente",
+    "Invoice.Total.Amount": "Total"
+  }
+}

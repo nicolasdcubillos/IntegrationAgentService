@@ -1,5 +1,7 @@
 // agregar referencias
-using IntegrationAgentService.Components.Processors;
+using IntegrationAgentService.Models.AttachedDocumentSchema;
+using IntegrationAgentService.Processors;
+using IntegrationAgentService.Repository;
 
 public class PurchaseInterface
 {
@@ -8,11 +10,15 @@ public class PurchaseInterface
     private readonly string _inputFolder;
     private readonly string _processedFolder;
     private readonly Dictionary<string, IFileProcessor> _processors;
+    private readonly string _connectionString;
+    private readonly IEntityTranslator _entityTranslator;
+    private readonly SqlRepository _sqlRepository;
 
-    public PurchaseInterface(ILogger logger, IConfiguration config)
+    public PurchaseInterface(ILogger logger, IConfiguration config, string connectionString)
     {
         _logger = logger;
         _config = config;
+        _connectionString = connectionString;
 
         _inputFolder = _config["ServiceConfig:Interfaces:Purchase:WatchFolder"]
             ?? throw new ArgumentNullException("WatchFolder not found");
@@ -23,15 +29,20 @@ public class PurchaseInterface
         Directory.CreateDirectory(_inputFolder);
         Directory.CreateDirectory(_processedFolder);
 
-        // registrar procesadores disponibles
         _processors = new Dictionary<string, IFileProcessor>(StringComparer.OrdinalIgnoreCase)
         {
             { ".xml", new XmlPurchaseProcessor(_logger, _config) },
             { ".json", new JsonPurchaseProcessor(_logger, _config) }
         };
+
+        string documentMappingPath = _config["ServiceConfig:Interfaces:Purchase:DocumentMappingPath"]
+            ?? throw new ArgumentNullException("DocumentMappingPath not found");
+
+        _entityTranslator = new EntityTranslator(documentMappingPath);
+        _sqlRepository = new SqlRepository(_connectionString);
     }
 
-    public void Execute()
+    public async Task Execute()
     {
         var files = Directory.GetFiles(_inputFolder, "*.*")
                              .Where(f => _processors.ContainsKey(Path.GetExtension(f)));
@@ -42,17 +53,29 @@ public class PurchaseInterface
             {
                 _logger.LogInformation($"[PurchaseInterface] Processing {file}");
 
+                // 1. Scanning all files in the input folder
+
                 var ext = Path.GetExtension(file).ToLowerInvariant();
                 var content = File.ReadAllText(file);
 
-                _processors[ext].Process(content, file);
+                // 2. Processing the file based on its extension 
+
+                AttachedDocument attachedDocument = _processors[ext].Process(content, file);
 
                 Thread.Sleep(500);
 
+                // 3. Moving the file to the processed folder
+
                 var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
                 //File.Move(file, dest, true);
-
                 _logger.LogInformation($"[PurchaseInterface] Moved to {dest}");
+
+                // 4. Translating the xml object file to database schema
+
+                Dictionary<string, object> tradeData = _entityTranslator.TranslateTrade(attachedDocument);
+
+                // 5. Persisting information in the database
+                await _sqlRepository.InsertAsync("Trade", tradeData);
             }
             catch (Exception ex)
             {
