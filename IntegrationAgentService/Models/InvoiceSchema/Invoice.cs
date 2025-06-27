@@ -50,7 +50,7 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "InvoiceSource", Namespace = "dian:gov:co:facturaelectronica:Structures-2-1")]
     public class InvoiceSource
     {
-        [XmlElement(ElementName = "IdentificationCode", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        [XmlElement(ElementName = "IdentificationCode")]
         public IdentificationCode IdentificationCode { get; set; }
     }
 
@@ -427,8 +427,8 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "ReceiptDocumentReference", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class ReceiptDocumentReference
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
     }
 
     [XmlRoot(ElementName = "AdditionalAccountID")]
@@ -443,7 +443,7 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "PartyName", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class PartyName
     {
-        [XmlElement(ElementName = "Name")]
+        [XmlElement(ElementName = "Name", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string Name { get; set; }
     }
 
@@ -466,18 +466,18 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "Country", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class Country
     {
-        [XmlElement(ElementName = "IdentificationCode")]
-        public string IdentificationCode { get; set; }
+        [XmlElement(ElementName = "IdentificationCode", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public IdentificationCode IdentificationCode { get; set; }
 
-        [XmlElement(ElementName = "Name", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        [XmlElement(ElementName = "Name", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
         public Name Name { get; set; }
     }
 
     [XmlRoot(ElementName = "Address", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class Address
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
         [XmlElement(ElementName = "CityName", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string CityName { get; set; }
         [XmlElement(ElementName = "PostalZone", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
@@ -488,7 +488,7 @@ namespace IntegrationAgentService.Models.InvoiceSchema
         public string CountrySubentityCode { get; set; }
         [XmlElement(ElementName = "AddressLine", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
         public AddressLine AddressLine { get; set; }
-        [XmlElement(ElementName = "Country", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
+        [XmlElement(ElementName = "Country")]
         public Country Country { get; set; }
     }
 
@@ -517,8 +517,8 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "RegistrationAddress", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class RegistrationAddress
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
         [XmlElement(ElementName = "CityName", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string CityName { get; set; }
         [XmlElement(ElementName = "PostalZone", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
@@ -536,9 +536,9 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "TaxScheme", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class TaxScheme
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
-        [XmlElement(ElementName = "Name")]
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
+        [XmlElement(ElementName = "Name", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string Name { get; set; }
     }
 
@@ -560,8 +560,8 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "CorporateRegistrationScheme", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class CorporateRegistrationScheme
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
     }
 
     [XmlRoot(ElementName = "PartyLegalEntity", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
@@ -578,7 +578,7 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "Contact", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class Contact
     {
-        [XmlElement(ElementName = "Name")]
+        [XmlElement(ElementName = "Name", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string Name { get; set; }
         [XmlElement(ElementName = "Telephone", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string Telephone { get; set; }
@@ -624,8 +624,8 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "PaymentMeans", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class PaymentMeans
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
         [XmlElement(ElementName = "PaymentMeansCode", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string PaymentMeansCode { get; set; }
         [XmlElement(ElementName = "PaymentDueDate", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
@@ -825,8 +825,8 @@ namespace IntegrationAgentService.Models.InvoiceSchema
     [XmlRoot(ElementName = "InvoiceLine", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")]
     public class InvoiceLine
     {
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
         [XmlElement(ElementName = "InvoicedQuantity", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public InvoicedQuantity InvoicedQuantity { get; set; }
         [XmlElement(ElementName = "LineExtensionAmount", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
@@ -852,8 +852,8 @@ namespace IntegrationAgentService.Models.InvoiceSchema
         public string ProfileID { get; set; }
         [XmlElement(ElementName = "ProfileExecutionID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public string ProfileExecutionID { get; set; }
-        [XmlElement(ElementName = "ID")]
-        public string ID { get; set; }
+        [XmlElement(ElementName = "ID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
+        public ID ID { get; set; }
         [XmlElement(ElementName = "UUID", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]
         public UUID UUID { get; set; }
         [XmlElement(ElementName = "IssueDate", Namespace = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")]

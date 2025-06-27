@@ -21,7 +21,8 @@ namespace IntegrationAgentService.Repository
                 ?? throw new InvalidOperationException("Error leyendo el archivo de mapeo.");
             
         }
-        public Dictionary<string, object> Translate(AttachedDocument attachedDocument, string table)
+
+        public Dictionary<string, object> Translate(object obj, string table)
         {
             Dictionary<string, string> _map = _fullMap.TryGetValue(table, out var tableMap)
                 ? tableMap
@@ -31,8 +32,8 @@ namespace IntegrationAgentService.Repository
 
             foreach (var kvp in _map)
             {
-                var value = GetNestedPropertyValue(attachedDocument, kvp.Key);
-                output[kvp.Value] = value ?? DBNull.Value;
+                var value = GetNestedPropertyValue(obj, kvp.Value);
+                output[kvp.Key] = value ?? DBNull.Value;
             }
 
             return output;

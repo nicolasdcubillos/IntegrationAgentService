@@ -67,5 +67,29 @@ namespace IntegrationAgentService.Repository
             return results;
         }
 
+        public async Task UpdateAsync(string tableName, Dictionary<string, object> data, string whereClause)
+        {
+            if (data == null || data.Count == 0)
+                throw new ArgumentException("El diccionario de datos no puede estar vacío.", nameof(data));
+
+            if (string.IsNullOrWhiteSpace(whereClause))
+                throw new ArgumentException("Debe proporcionar una cláusula WHERE para evitar actualizar todo.", nameof(whereClause));
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var setClause = string.Join(", ", data.Keys.Select(k => $"{k} = @{k}"));
+            var commandText = $"UPDATE {tableName} SET {setClause} WHERE {whereClause}";
+
+            using var command = new SqlCommand(commandText, connection);
+
+            foreach (var kvp in data)
+            {
+                command.Parameters.AddWithValue("@" + kvp.Key, kvp.Value ?? DBNull.Value);
+            }
+
+            await command.ExecuteNonQueryAsync();
+        }
+
     }
 }
