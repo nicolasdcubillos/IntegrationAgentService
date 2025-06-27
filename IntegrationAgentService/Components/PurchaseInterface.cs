@@ -17,6 +17,7 @@ public class PurchaseInterface
     private readonly IEntityTranslator _entityTranslator;
     private readonly SqlRepository _sqlRepository;
     private readonly string _tipodcto;
+    private string nit;
 
     public PurchaseInterface(ILogger logger, IConfiguration config, string connectionString)
     {
@@ -57,7 +58,7 @@ public class PurchaseInterface
         {
             try
             {
-                _logger.LogInformation($"[PurchaseInterface] Processing {file}");
+                _logger.LogInformation($"[PurchaseInterface] Procesando {file}");
 
                 // 1. Scanning all files in the input folder
 
@@ -74,7 +75,7 @@ public class PurchaseInterface
 
                 var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
                 //File.Move(file, dest, true);
-                _logger.LogInformation($"[PurchaseInterface] Moved to {dest}");
+                _logger.LogInformation($"[PurchaseInterface] Procesado y movido a {dest}");
 
                 // 4. Translating the xml object file to database schema
 
@@ -101,13 +102,10 @@ public class PurchaseInterface
 
                 saveTradeData(file, attachedDocument, tradeData, consecut);
                 saveMvTradeData(file, attachedDocument, consecut);
-
-                //await _sqlRepository.InsertAsync("Trade", tradeData);
-                //await _sqlRepository.InsertAsync("MvTrade", mvTradeData);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[PurchaseInterface] Failed to process {file}");
+                _logger.LogError(ex, $"[PurchaseInterface] Error al procesar {file}: {ex.Message}");
             }
         }
     }
@@ -171,6 +169,7 @@ public class PurchaseInterface
 
     private async void saveTradeData(string file, AttachedDocument attachedDocument, Dictionary<string, object> tradeData, int consecut)
     {
+        tradeData["NIT"] = nit;
         tradeData.Add("TIPODCTO", _tipodcto);
         tradeData.Add("NRODCTO", consecut);
         await _sqlRepository.InsertAsync("TRADE", tradeData);
@@ -178,10 +177,10 @@ public class PurchaseInterface
 
     private async void saveMvTradeData(string file, AttachedDocument attachedDocument, int consecut)
     {
-        
         Dictionary<string, object> mvTradeData = _entityTranslator.Translate(attachedDocument, "MVTRADE");
         mvTradeData.Add("TIPODCTO", _tipodcto);
         mvTradeData.Add("NRODCTO", consecut);
+        mvTradeData["NIT"] = nit;
 
         foreach (InvoiceLine invoiceLine in attachedDocument.Attachment.ExternalReference.Invoice.InvoiceLine)
         {
@@ -193,7 +192,7 @@ public class PurchaseInterface
                     mvTradeData[kvp.Key] = kvp.Value;
                 }
             }
-            await _sqlRepository.InsertAsync("MVTRADE", mvTradeData);
+           // await _sqlRepository.InsertAsync("MVTRADE", mvTradeData);
         }
     }
 

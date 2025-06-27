@@ -20,75 +20,97 @@ namespace IntegrationAgentService.Repository
 
         public async Task InsertAsync(string tableName, Dictionary<string, object> data)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var columns = string.Join(", ", data.Keys);
-            var parameters = string.Join(", ", data.Keys.Select(k => "@" + k));
-            var commandText = $"INSERT INTO {tableName} ({columns}) VALUES ({parameters})";
-
-            using var command = new SqlCommand(commandText, connection);
-
-            foreach (var kvp in data)
+            string commandText = string.Empty;
+            try
             {
-                command.Parameters.AddWithValue("@" + kvp.Key, kvp.Value ?? DBNull.Value);
-            }
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-            await command.ExecuteNonQueryAsync();
+                var columns = string.Join(", ", data.Keys);
+                var parameters = string.Join(", ", data.Keys.Select(k => "@" + k));
+                commandText = $"INSERT INTO {tableName} ({columns}) VALUES ({parameters})";
+
+                using var command = new SqlCommand(commandText, connection);
+
+                foreach (var kvp in data)
+                {
+                    command.Parameters.AddWithValue("@" + kvp.Key, kvp.Value ?? DBNull.Value);
+                }
+
+                await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                var paramInfo = string.Join(", ", data.Select(kvp => $"@{kvp.Key} = {kvp.Value ?? "NULL"}"));
+                var errorMsg = $"[InsertAsync] Error al ejecutar:\nSQL: {commandText}\nParams: {paramInfo}\nTabla: {tableName}\nError: {ex.Message}";
+                throw new Exception(errorMsg, ex);
+            }
         }
 
         public async Task<List<Dictionary<string, object>>> SelectAsync(string tableName, string? whereClause = null)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var query = $"SELECT * FROM {tableName}";
-            if (!string.IsNullOrWhiteSpace(whereClause))
-                query += $" WHERE {whereClause}";
-
-            using var command = new SqlCommand(query, connection);
-
-            using var reader = await command.ExecuteReaderAsync();
-
-            var results = new List<Dictionary<string, object>>();
-
-            while (await reader.ReadAsync())
+            string query = string.Empty;
+            try
             {
-                var row = new Dictionary<string, object>();
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-                for (int i = 0; i < reader.FieldCount; i++)
+                query = $"SELECT * FROM {tableName}";
+                if (!string.IsNullOrWhiteSpace(whereClause))
+                    query += $" WHERE {whereClause}";
+
+                using var command = new SqlCommand(query, connection);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<Dictionary<string, object>>();
+
+                while (await reader.ReadAsync())
                 {
-                    row[reader.GetName(i)] = reader.IsDBNull(i) ? null! : reader.GetValue(i);
+                    var row = new Dictionary<string, object>();
+
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        row[reader.GetName(i)] = reader.IsDBNull(i) ? null! : reader.GetValue(i);
+                    }
+
+                    results.Add(row);
                 }
 
-                results.Add(row);
+                return results;
             }
-
-            return results;
+            catch (Exception ex)
+            {
+                var errorMsg = $"[SelectAsync] Error al ejecutar:\nSQL: {query}\nTabla: {tableName}\nError: {ex.Message}";
+                throw new Exception(errorMsg, ex);
+            }
         }
 
         public async Task UpdateAsync(string tableName, Dictionary<string, object> data, string whereClause)
         {
-            if (data == null || data.Count == 0)
-                throw new ArgumentException("El diccionario de datos no puede estar vacío.", nameof(data));
-
-            if (string.IsNullOrWhiteSpace(whereClause))
-                throw new ArgumentException("Debe proporcionar una cláusula WHERE para evitar actualizar todo.", nameof(whereClause));
-
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var setClause = string.Join(", ", data.Keys.Select(k => $"{k} = @{k}"));
-            var commandText = $"UPDATE {tableName} SET {setClause} WHERE {whereClause}";
-
-            using var command = new SqlCommand(commandText, connection);
-
-            foreach (var kvp in data)
+            string commandText = string.Empty;
+            try
             {
-                command.Parameters.AddWithValue("@" + kvp.Key, kvp.Value ?? DBNull.Value);
-            }
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-            await command.ExecuteNonQueryAsync();
+                var setClause = string.Join(", ", data.Keys.Select(k => $"{k} = @{k}"));
+                commandText = $"UPDATE {tableName} SET {setClause} WHERE {whereClause}";
+
+                using var command = new SqlCommand(commandText, connection);
+
+                foreach (var kvp in data)
+                {
+                    command.Parameters.AddWithValue("@" + kvp.Key, kvp.Value ?? DBNull.Value);
+                }
+
+                await command.ExecuteNonQueryAsync();
+            } catch (Exception ex)
+            {
+                var paramInfo = string.Join(", ", data.Select(kvp => $"@{kvp.Key} = {kvp.Value ?? "NULL"}"));
+                var errorMsg = $"[UpdateAsync] Error al ejecutar:\nSQL: {commandText}\nParams: {paramInfo}\nTabla: {tableName}\nError: {ex.Message}";
+                throw new Exception(errorMsg, ex);
+            }
         }
 
     }
