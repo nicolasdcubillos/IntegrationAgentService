@@ -1,0 +1,25 @@
+{
+  "TRADE": {
+    "NIT": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.CompanyID.Text",
+    "BRUTO": "Attachment.ExternalReference.Invoice.LegalMonetaryTotal.TaxInclusiveAmount.Text",
+    "DIR": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.RegistrationAddress.AddressLine.Line",
+    "FECHA": "Attachment.ExternalReference.Invoice.IssueDate"
+  },
+  "MVTRADE": {
+    "FECHA": "Attachment.ExternalReference.Invoice.IssueDate",
+    "FECING": "Attachment.ExternalReference.Invoice.IssueDate",
+    "NIT": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.CompanyID.Text",
+    "NOMBRE": "Item.Description",
+    "CANTIDAD": "InvoicedQuantity.Text",
+    "VALORUNIT": "Price.PriceAmount.Text"
+  },
+  "MTPROCLI": {
+    "NOMBRE": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.RegistrationName",
+    "NIT": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.CompanyID.Text",
+    "CDCIIU": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.RegistrationAddress.ID.Text",
+    "DIRECCION": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.RegistrationAddress.AddressLine.Line",
+    "CONTACTO": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.Contact.Name",
+    "EMAIL": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.Contact.ElectronicMail",
+    "PERSONANJ": "Attachment.ExternalReference.Invoice.AccountingSupplierParty.AdditionalAccountID.Text"
+  }
+}

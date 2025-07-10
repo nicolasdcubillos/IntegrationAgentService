@@ -1,8 +1,11 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System.Runtime.InteropServices;
 
 IHostBuilder builder = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((hostingContext, config) =>
+    {
+        config.Sources.Clear(); // Quita cualquier fuente previa
+        config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    })
     .ConfigureServices((hostContext, services) =>
     {
         services.AddHostedService<Worker>();
@@ -10,7 +13,7 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
-    builder.UseWindowsService(); // Only active on Windows
+    builder.UseWindowsService();
 }
 
 builder.Build().Run();

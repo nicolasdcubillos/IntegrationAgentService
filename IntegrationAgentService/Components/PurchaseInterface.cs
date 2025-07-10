@@ -1,10 +1,9 @@
-// agregar referencias
 using IntegrationAgentService.Models.AttachedDocumentSchema;
 using IntegrationAgentService.Models.InvoiceSchema;
 using IntegrationAgentService.Processors;
+using IntegrationAgentService.ProductServiceClassifier;
 using IntegrationAgentService.Repository;
 using Microsoft.Data.SqlClient;
-using Microsoft.Identity.Client;
 
 public class PurchaseInterface
 {
@@ -12,11 +11,13 @@ public class PurchaseInterface
     private readonly IConfiguration _config;
     private readonly string _inputFolder;
     private readonly string _processedFolder;
+    private readonly string _errorsFolder;
     private readonly Dictionary<string, IFileProcessor> _processors;
     private readonly string _connectionString;
     private readonly IEntityTranslator _entityTranslator;
     private readonly SqlRepository _sqlRepository;
     private readonly string _tipodcto;
+    private ClassifierML _classifier;
     private string nit;
 
     public PurchaseInterface(ILogger logger, IConfiguration config, string connectionString)
@@ -31,8 +32,12 @@ public class PurchaseInterface
         _processedFolder = _config["ServiceConfig:Interfaces:Purchase:ProcessedFolder"]
             ?? throw new ArgumentNullException("ProcessedFolder not found");
 
+        _errorsFolder = _config["ServiceConfig:Interfaces:Purchase:ErrorsFolder"]
+            ?? throw new ArgumentNullException("ErrorsFolder not found");
+
         Directory.CreateDirectory(_inputFolder);
         Directory.CreateDirectory(_processedFolder);
+        Directory.CreateDirectory(_errorsFolder);
 
         _processors = new Dictionary<string, IFileProcessor>(StringComparer.OrdinalIgnoreCase)
         {
@@ -47,6 +52,38 @@ public class PurchaseInterface
         _sqlRepository = new SqlRepository(_connectionString);
         _tipodcto = _config["ServiceConfig:Interfaces:Purchase:TipoDcto"]
             ?? throw new ArgumentNullException("TipoDcto not found");
+
+        if (bool.TryParse(_config["ServiceConfig:Interfaces:Purchase:MLTrainingEnabled"], out var mlTrainingEnabled) && mlTrainingEnabled)
+        {
+            _logger.LogInformation("[PurchaseInterface] ML Training is enabled.");
+            StartProductServiceClassifierML();
+        }
+        else
+        {
+            _logger.LogInformation("[PurchaseInterface] ML Training is disabled.");
+        }
+    }
+
+    private void StartProductServiceClassifierML()
+    {
+        string modelPath = _config["ServiceConfig:Interfaces:Purchase:MLModelPath"]
+            ?? throw new ArgumentNullException("MLModelPath not found");
+
+        if (File.Exists(modelPath))
+        {
+            _classifier = new ClassifierML(modelPath);
+            Console.WriteLine($"Modelo existente cargado desde: {modelPath}");
+        }
+        else
+        {
+            _logger.LogInformation("ML Training starting.");
+            var entrenador = new TrainerML();
+            var trainingDataList = GetTrainingData();
+            entrenador.TrainAndSaveModel(modelPath, trainingDataList);
+
+            _classifier = new ClassifierML(modelPath);
+            Console.WriteLine($"Modelo entrenado y guardado en: {modelPath}");
+        }
     }
 
     public async Task Execute()
@@ -69,20 +106,19 @@ public class PurchaseInterface
 
                 AttachedDocument attachedDocument = _processors[ext].Process(content, file);
 
+                if (attachedDocument == null)
+                {
+                    throw new Exception("Attached document null.");
+                }
+
                 Thread.Sleep(500);
 
-                // 3. Moving the file to the processed folder
-
-                var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
-                //File.Move(file, dest, true);
-                _logger.LogInformation($"[PurchaseInterface] Procesado y movido a {dest}");
-
-                // 4. Translating the xml object file to database schema
+                // 3. Translating the xml object file to database schema
 
                 Dictionary<string, object> tradeData = _entityTranslator.Translate(attachedDocument, "TRADE");
                 Dictionary<string, object> mtprocliData = _entityTranslator.Translate(attachedDocument, "MTPROCLI");
 
-                // 5. Persisting information in the database and business logic
+                // 4. Persisting information in the database and business logic
 
                 string nit = attachedDocument.SenderParty.PartyTaxScheme.CompanyID.Text;
                 if (nit == null)
@@ -91,34 +127,78 @@ public class PurchaseInterface
                 }
                 nit += "-" + CalcularDigitoVerificacion(nit);
 
-                // a. Mtprocli table
+                // Transaction management
 
-                saveMtprocliData(file, attachedDocument, nit, mtprocliData);
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            int consecut = GetConsecutForTipoDcto();
+                            UpdateConsecutForTipoDcto(consecut);
+                            SaveMtprocliData(file, attachedDocument, nit, mtprocliData);
+                            SaveTradeData(file, attachedDocument, tradeData, consecut);
+                            SaveMvTradeData(file, attachedDocument, consecut);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"[PurchaseInterface] Error al guardar datos para {file}: {ex.Message}");
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
 
-                // b. Trade and Mvtrade table
+                // 5. Moving the file to the processed folder
 
-                int consecut = await getConsecutForTipoDcto();
-                updateConsecutForTipoDcto(consecut);
-
-                saveTradeData(file, attachedDocument, tradeData, consecut);
-                saveMvTradeData(file, attachedDocument, consecut);
+                var dest = Path.Combine(_processedFolder, Path.GetFileName(file));
+                File.Move(file, dest, true);
+                _logger.LogInformation($"[PurchaseInterface] Procesado y movido a {dest}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"[PurchaseInterface] Error al procesar {file}: {ex.Message}");
+                var destErrors = Path.Combine(_errorsFolder, Path.GetFileName(file));
+                File.Move(file, destErrors, true);
             }
         }
     }
 
-    private async void saveMtprocliData(string file, AttachedDocument attachedDocument, string nit, Dictionary<string, object> mtprocliData)
+    private List<ProductInput> GetTrainingData()
     {
-        var mtprocliQuery = await _sqlRepository.SelectAsync("MTPROCLI", $"NIT = '{nit}'");
+        var resultado = _sqlRepository.SelectAsync("MTMERCIA").GetAwaiter().GetResult(); ;
+
+        var lista = new List<ProductInput>();
+
+        foreach (var fila in resultado)
+        {
+            var codigo = fila.ContainsKey("CODIGO") ? fila["CODIGO"]?.ToString() ?? "" : "";
+            var descripcio = fila.ContainsKey("DESCRIPCIO") ? fila["DESCRIPCIO"]?.ToString() ?? "" : "";
+
+            if (!string.IsNullOrWhiteSpace(codigo) && !string.IsNullOrWhiteSpace(descripcio))
+            {
+                lista.Add(new ProductInput
+                {
+                    ServiceCode = codigo,
+                    Description = descripcio
+                });
+            }
+        }
+
+        return lista;
+    }
+
+    private void SaveMtprocliData(string file, AttachedDocument attachedDocument, string nit, Dictionary<string, object> mtprocliData)
+    {
+        var mtprocliQuery = _sqlRepository.SelectAsync("MTPROCLI", $"NIT = '{nit}'").GetAwaiter().GetResult();
         if (mtprocliQuery.Count == 0)
         {
             string countryIdentificationCode = attachedDocument.Attachment.ExternalReference.Invoice.AccountingSupplierParty.Party.PartyTaxScheme.RegistrationAddress.Country.IdentificationCode.Text;
             if (countryIdentificationCode != null)
             {
-                var mtpaisQuery = await _sqlRepository.SelectAsync("MTPAISES", $"ISO_3166_1 = '{countryIdentificationCode}'");
+                var mtpaisQuery = _sqlRepository.SelectAsync("MTPAISES", $"ISO_3166_1 = '{countryIdentificationCode}'").GetAwaiter().GetResult();
                 string paisCodigo = mtpaisQuery.FirstOrDefault()?["CODIGO"]?.ToString();
                 if (paisCodigo != null)
                 {
@@ -149,8 +229,8 @@ public class PurchaseInterface
             if (telephone != null)
             {
                 string[] parts = telephone.Split('|');
-                string tel1 = telephone.Length > 0 ? parts[0] : "";
-                string tel2 = telephone.Length > 1 ? parts[1] : "";
+                string tel1 = parts.Length > 0 ? parts[0] : "";
+                string tel2 = parts.Length > 1 ? parts[1] : "";
                 mtprocliData.Add("TEL1", tel1);
                 mtprocliData.Add("TEL2", tel2);
             }
@@ -163,19 +243,19 @@ public class PurchaseInterface
             mtprocliData.Add("MEDPAG", 0);
             mtprocliData["NIT"] = nit; // Actualizando el NIT con el dígito de verificación
 
-            await _sqlRepository.InsertAsync("MTPROCLI", mtprocliData);
+            _sqlRepository.InsertAsync("MTPROCLI", mtprocliData).GetAwaiter().GetResult();
         }
     }
 
-    private async void saveTradeData(string file, AttachedDocument attachedDocument, Dictionary<string, object> tradeData, int consecut)
+    private void SaveTradeData(string file, AttachedDocument attachedDocument, Dictionary<string, object> tradeData, int consecut)
     {
         tradeData["NIT"] = nit;
         tradeData.Add("TIPODCTO", _tipodcto);
         tradeData.Add("NRODCTO", consecut);
-        await _sqlRepository.InsertAsync("TRADE", tradeData);
+        _sqlRepository.InsertAsync("TRADE", tradeData).GetAwaiter().GetResult();
     }
 
-    private async void saveMvTradeData(string file, AttachedDocument attachedDocument, int consecut)
+    private void SaveMvTradeData(string file, AttachedDocument attachedDocument, int consecut)
     {
         Dictionary<string, object> mvTradeData = _entityTranslator.Translate(attachedDocument, "MVTRADE");
         mvTradeData.Add("TIPODCTO", _tipodcto);
@@ -192,14 +272,14 @@ public class PurchaseInterface
                     mvTradeData[kvp.Key] = kvp.Value;
                 }
             }
-           // await _sqlRepository.InsertAsync("MVTRADE", mvTradeData);
+            //_sqlRepository.InsertAsync("MVTRADE", mvTradeData).GetAwaiter().GetResult();
         }
     }
 
-    private async Task<int> getConsecutForTipoDcto()
+    private int GetConsecutForTipoDcto()
     {
         int consecut = 0;
-        var consecutQuery = await _sqlRepository.SelectAsync("CONSECUT", $"TIPODCTO = '{_tipodcto}' AND ORIGEN = 'COM'");
+        var consecutQuery = _sqlRepository.SelectAsync("CONSECUT", $"TIPODCTO = '{_tipodcto}' AND ORIGEN = 'COM'").GetAwaiter().GetResult();
         string consecutString = consecutQuery.FirstOrDefault()?["CONSECUT"]?.ToString();
         if (!string.IsNullOrWhiteSpace(consecutString))
         {
@@ -211,14 +291,14 @@ public class PurchaseInterface
         return consecut;
     }
 
-    private async void updateConsecutForTipoDcto(int consecut)
+    private void UpdateConsecutForTipoDcto(int consecut)
     {
         var consecutData = new Dictionary<string, object>
         {
             { "CONSECUT", consecut + 1 }
         };
 
-        await _sqlRepository.UpdateAsync("CONSECUT", consecutData, $"TIPODCTO = '{_tipodcto}'");
+        _sqlRepository.UpdateAsync("CONSECUT", consecutData, $"TIPODCTO = '{_tipodcto}'").GetAwaiter().GetResult();
     }
 
     public string CalcularDigitoVerificacion(string nit)
